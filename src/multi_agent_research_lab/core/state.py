@@ -26,9 +26,33 @@ class ResearchState(BaseModel):
     trace: list[dict[str, Any]] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
 
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    estimated_cost_usd: float = 0.0
+
     def record_route(self, route: str) -> None:
         self.route_history.append(route)
         self.iteration += 1
 
     def add_trace_event(self, name: str, payload: dict[str, Any]) -> None:
         self.trace.append({"name": name, "payload": payload})
+
+    def record_llm_usage(
+        self,
+        input_tokens: int | None,
+        output_tokens: int | None,
+        cost_usd: float | None,
+    ) -> dict[str, Any]:
+        """Accumulate LLM usage and return metadata for an agent result."""
+
+        metadata: dict[str, Any] = {}
+        if input_tokens is not None:
+            self.total_input_tokens += input_tokens
+            metadata["input_tokens"] = input_tokens
+        if output_tokens is not None:
+            self.total_output_tokens += output_tokens
+            metadata["output_tokens"] = output_tokens
+        if cost_usd is not None:
+            self.estimated_cost_usd += cost_usd
+            metadata["cost_usd"] = cost_usd
+        return metadata
